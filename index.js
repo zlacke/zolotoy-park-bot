@@ -33,7 +33,7 @@ async function verifyDriver(identifier) {
           "X-API-Key": YANDEX_API_KEY,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ park_id: YANDEX_PARK_ID, limit: 2000 }),
+        body: JSON.stringify({ query: { park: { id: YANDEX_PARK_ID } }, limit: 2000 }),
         signal: controller.signal,
       }
     );
