@@ -4,6 +4,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || "https://zolotoybot.ru";
 const YANDEX_API_KEY = process.env.YANDEX_API_KEY || "";
 const YANDEX_PARK_ID = process.env.YANDEX_PARK_ID || "";
+const YANDEX_CLIENT_ID = process.env.YANDEX_CLIENT_ID || `taxi/park/${YANDEX_PARK_ID}`;
 
 if (!BOT_TOKEN) {
   console.error("BOT_TOKEN not set!");
@@ -28,7 +29,7 @@ async function verifyDriver(identifier) {
       {
         method: "POST",
         headers: {
-          "X-Client-ID": YANDEX_PARK_ID,
+          "X-Client-ID": YANDEX_CLIENT_ID,
           "X-API-Key": YANDEX_API_KEY,
           "Content-Type": "application/json",
         },
@@ -68,6 +69,7 @@ async function verifyDriver(identifier) {
     return { authorized: false };
   } catch (e) {
     console.error("Verify error:", e.message);
+    console.error("Verify stack:", e.stack);
     return { authorized: false, error: e.message };
   }
 }
