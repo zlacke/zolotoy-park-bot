@@ -24,11 +24,12 @@ async function verifyDriver(identifier) {
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     const resp = await fetch(
-      `https://fleet.taxi.yandex.net/parks/${YANDEX_PARK_ID}/driver-profiles/list`,
+      "https://fleet-api.taxi.yandex.net/v1/parks/driver-profiles/list",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${YANDEX_API_KEY}`,
+          "X-Client-ID": YANDEX_PARK_ID,
+          "X-API-Key": YANDEX_API_KEY,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ park_id: YANDEX_PARK_ID, limit: 2000 }),
