@@ -8,7 +8,7 @@ if (!BOT_TOKEN) {
   process.exit(1);
 }
 
-const bot = bot = new Bot(BOT_TOKEN);
+const bot = new Bot(BOT_TOKEN);
 
 bot.command("start", async (ctx) => {
   const kb = {
