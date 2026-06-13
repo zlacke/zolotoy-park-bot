@@ -14,6 +14,8 @@ if (!BOT_TOKEN) {
 const bot = new Bot(BOT_TOKEN);
 const userSessions = {};
 
+const API_PROXY_URL = process.env.API_PROXY_URL || "https://zolotoybot.ru/api/yandex-proxy";
+
 async function verifyDriver(identifier) {
   if (!YANDEX_API_KEY || !YANDEX_PARK_ID) {
     console.error("Yandex API not configured");
@@ -22,26 +24,24 @@ async function verifyDriver(identifier) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-    const resp = await fetch(
-      "https://fleet-api.taxi.yandex.net/v1/parks/driver-profiles/list",
-      {
-        method: "POST",
-        headers: {
-          "X-Client-ID": YANDEX_CLIENT_ID,
-          "X-API-Key": YANDEX_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query: { park: { id: YANDEX_PARK_ID } }, limit: 2000 }),
-        signal: controller.signal,
-      }
-    );
+    const resp = await fetch(API_PROXY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_id: YANDEX_CLIENT_ID,
+        api_key: YANDEX_API_KEY,
+        park_id: YANDEX_PARK_ID,
+        limit: 2000,
+      }),
+      signal: controller.signal,
+    });
     clearTimeout(timeoutId);
 
     if (!resp.ok) {
       const text = await resp.text();
-      console.error("Yandex API error:", resp.status, text.substring(0, 200));
+      console.error("API proxy error:", resp.status, text.substring(0, 200));
       return { authorized: false, error: `API error ${resp.status}` };
     }
 
@@ -69,7 +69,6 @@ async function verifyDriver(identifier) {
     return { authorized: false };
   } catch (e) {
     console.error("Verify error:", e.message);
-    console.error("Verify stack:", e.stack);
     return { authorized: false, error: e.message };
   }
 }
