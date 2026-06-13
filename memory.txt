@@ -1,0 +1,101 @@
+=== ЗОЛОТОЙ ПАРК - Telegram Mini App для Яндекс Такси ===
+
+== СЕРВЕРЫ ==
+
+1. AdminVPS (API + сайт)
+   - IP: 138.16.226.236
+   - SSH-ключ: C:\Users\Мерзляковы\.ssh\id_rsa_taxi
+   - Логин: root
+   - Проблема: блокирует Telegram IP и IPv6-only домены
+   - Решение: Cloudflare Worker как прокси
+
+2. Bothost.ru (Telegram бот)
+   - Логин: merzlykov@gmail.com
+   - Пароль: Mih@05082008!$#
+   - Регион: Нидерланды (Telegram не заблокирован)
+   - GitHub репозиторий: https://github.com/zlacke/zolotoy-park-bot
+
+== ДОМЕН И SSL ==
+- Домен: zolotoybot.ru (куплен на reg.ru)
+- SSL: Let's Encrypt (auto-renew через certbot)
+- Nginx: reverse-proxy на порт 8000
+
+== CLOUDFLARE WORKER ==
+- URL: https://telegram-proxy.creador.workers.dev
+- Функция: проксирует запросы к Telegram API и Yandex Fleet API
+- Код в: taxi-miniapp-bot/worker.txt
+- Путь запросов Telegram: /bot{token}/method
+- Путь запросов Yandex: /yandex{endpoint}
+
+== ТОКЕНЫ (в .env на сервере 138.16.226.236) ==
+- BOT_TOKEN: 8905102912:AAFy...mrfZY (УТЕК В ЧАТ - НУЖНО ПЕРЕГЕНЕРИРОВАТЬ!)
+- YANDEX_API_KEY: WuSXpVSsNiFGqFEiWPlIimXSSQaLXtrHJ
+- YANDEX_PARK_ID: 0218b80d491a460f92f1b05afc51a725
+- WEBAPP_URL: https://zolotoybot.ru
+- SUPPORT_LINK: https://t.me/ZP_help
+
+== СТЕК ТЕХНОЛОГИЙ ==
+- Python 3.11 / FastAPI / aiohttp / aiosqlite / aiogram
+- Node.js / grammY (бот на bothost.ru)
+- Docker + docker-compose
+- HTML/CSS/JS (Mini App, Apple-стиль UI)
+- SQLite база данных
+
+== КАК РАБОТАЕТ ==
+
+Бот (bothost.ru):
+1. Пользователь пишет /start
+2. Бот просит ввести номер телефона или номер ВУ
+3. Бот отправляет запрос на API: /api/driver/verify?identifier=XXX
+4. API проверяет в Yandex Fleet API (через Cloudflare Worker)
+5. Если найден - открывается доступ к Mini App
+6. Если нет - "Номер не найден в базе парка"
+
+Mini App (zolotoybot.ru):
+- Главная: активный заказ (откуда→куда, цена, статус)
+- История: завершённые заказы
+- Статистика: заработок за день
+- Настройки: водитель, авто, оплата (нал/безнал)
+- Поддержка: FAQ + ссылка на чат
+
+API (zolotoybot.ru):
+- /api/auth/* - авторизация
+- /api/driver/* - водитель (info, stats, payment, car, verify, check_phone)
+- /api/orders/* - заказы (active, history, cancel, complete)
+- /api/webhooks/yandex - входящие webhooks от Yandex
+
+== ФАЙЛЫ НА ПК ==
+- C:\Users\Мерзляковы\taxi-miniapp\ - основной проект (API + бот + Mini App)
+- C:\Users\Мерзляковы\taxi-miniapp-bot\ - бот для bothost.ru (Node.js)
+- C:\Users\Мерзляковы\.ssh\id_rsa_taxi\ - SSH-ключ от сервера
+
+== БЛОКЕРЫ ==
+- AdminVPS блокирует Telegram IP (149.154.x.x) — решено через Cloudflare Worker
+- fleet.taxi.yandex.net работает ТОЛЬКО по IPv6 — ни сервер, ни Worker не могут достучаться
+- РЕШЕНИЕ: написать в поддержку AdminVPS чтобы включили IPv6, или сменить хостинг
+
+== ЧТО НУЖНО СДЕЛАТЬ ЗАВТРА ==
+1. ПЕРЕГЕНЕРИРОВАТЬ BOT_TOKEN в @BotFather (/revoke)
+2. Обновить токен в .env на сервере: nano /opt/taxi-miniapp/.env
+3. Перезапустить бота на bothost.ru
+4. Написать в поддержку AdminVPS: "Включите IPv6 для сервера 138.16.226.236"
+5. Как IPv6 заработает — авторизация через Fleet API заработает
+6. Протестировать полный flow
+
+== КОМАНДЫ ДЛЯ СЕРВЕРА ==
+
+Подключение:
+  python -c "import paramiko; key=paramiko.RSAKey.from_private_key_file(r'C:\Users\Мерзляковы\.ssh\id_rsa_taxi'); ssh=paramiko.SSHClient(); ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy()); ssh.connect('138.16.226.236',username='root',pkey=key); print('OK')"
+
+Деплой:
+  cd C:\Users\Мерзляковы\taxi-miniapp
+  # Создать tar, загрузить на сервер, пересобрать Docker
+
+Перезапуск:
+  docker compose down && docker compose up -d --build
+
+Логи:
+  docker logs taxi-miniapp --tail 20
+
+Проверка API:
+  curl -s http://127.0.0.1:8000/api/driver/verify?identifier=TEST
