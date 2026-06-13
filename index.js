@@ -2,7 +2,6 @@ const { Bot } = require("grammy");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || "https://zolotoybot.ru";
-const API_URL = process.env.API_URL || "https://zolotoybot.ru";
 const YANDEX_API_KEY = process.env.YANDEX_API_KEY || "";
 const YANDEX_PARK_ID = process.env.YANDEX_PARK_ID || "";
 
@@ -22,7 +21,7 @@ async function verifyDriver(identifier) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     const resp = await fetch(
       `https://fleet.taxi.yandex.net/parks/${YANDEX_PARK_ID}/driver-profiles/list`,
@@ -46,18 +45,21 @@ async function verifyDriver(identifier) {
 
     const data = await resp.json();
     const drivers = data.driver_profiles || [];
+    console.log(`Found ${drivers.length} drivers in fleet`);
+
+    const cleanId = identifier.replace(/[\s\-\(\)\+]/g, "");
 
     for (const driver of drivers) {
       const profile = driver.driver_profile || {};
-      const phone = profile.phone || "";
+      const phone = (profile.phone || "").replace(/[\s\-\(\)\+]/g, "");
       const licenseNum = (profile.license || {}).number || "";
       const name = profile.name || "";
       const driverId = profile.id || "";
 
-      if (identifier === phone || identifier === licenseNum) {
+      if (cleanId === phone || identifier === licenseNum || cleanId === licenseNum) {
         return {
           authorized: true,
-          driver: { id: driverId, name, phone, license: licenseNum },
+          driver: { id: driverId, name, phone: profile.phone, license: licenseNum },
         };
       }
     }
@@ -71,9 +73,19 @@ async function verifyDriver(identifier) {
 
 bot.command("start", async (ctx) => {
   userSessions[ctx.from.id] = { step: "ask_identifier" };
+
+  const kb = {
+    keyboard: [
+      [{ text: "\u{1F4F1} \u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440", request_contact: true }],
+    ],
+    resize_keyboard: true,
+    one_time_keyboard: true,
+  };
+
   await ctx.reply(
-    "\U0001F44B Добро пожаловать в Золотой Парк!\n\n" +
-    "Для входа введите ваш номер телефона или номер водительского удостоверения:"
+    "\u{1F44B} \u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C \u0432 \u0417\u043E\u043B\u043E\u0442\u043E\u0439 \u041F\u0430\u0440\u043A!\n\n" +
+    "\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u043A\u043D\u043E\u043F\u043A\u0443 \u043D\u0438\u0436\u0435:",
+    { reply_markup: kb }
   );
 });
 
@@ -82,12 +94,55 @@ bot.command("app", async (ctx) => {
   if (session && session.authorized) {
     const kb = {
       inline_keyboard: [
-        [{ text: "\U0001F680 Открыть приложение", web_app: { url: WEBAPP_URL } }],
+        [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: WEBAPP_URL } }],
       ],
     };
-    await ctx.reply("\U0001F680 Открывайте приложение:", { reply_markup: kb });
+    await ctx.reply("\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0432\u0430\u0439\u0442\u0435 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435:", { reply_markup: kb });
   } else {
-    await ctx.reply("\u274C Сначала авторизуйтесь. Нажмите /start");
+    await ctx.reply("\u274C \u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0430\u0432\u0442\u043E\u0440\u0438\u0437\u0443\u0439\u0442\u0435\u0441\u044C. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 /start");
+  }
+});
+
+bot.on("contact", async (ctx) => {
+  const contact = ctx.message.contact;
+  const phone = contact.phone_number;
+  const userId = ctx.from.id;
+
+  await ctx.reply("\u{1F50D} \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u044E \u0434\u0430\u043D\u043D\u044B\u0435 \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430...");
+
+  const result = await verifyDriver(phone);
+
+  if (result.authorized) {
+    userSessions[userId] = { step: "done", authorized: true, driver: result.driver };
+
+    const mainKb = {
+      keyboard: [
+        [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: WEBAPP_URL } }],
+        [{ text: "\u{1F4CA} \u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441" }],
+        [{ text: "\u2753 \u041F\u043E\u043C\u043E\u0449\u044C" }],
+      ],
+      resize_keyboard: true,
+    };
+
+    await ctx.reply(
+      `\u2705 ${result.driver.name || "\u0412\u043E\u0434\u0438\u0442\u0435\u043B\u044C"}, \u0432\u044B \u0430\u0432\u0442\u043E\u0440\u0438\u0437\u043E\u0432\u0430\u043D\u044B!\n\n\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C \u0432 \u0417\u043E\u043B\u043E\u0442\u043E\u0439 \u041F\u0430\u0440\u043A.`,
+      { reply_markup: mainKb }
+    );
+  } else {
+    userSessions[userId] = { step: "ask_identifier" };
+
+    const retryKb = {
+      keyboard: [
+        [{ text: "\u{1F4F1} \u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440", request_contact: true }],
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true,
+    };
+
+    await ctx.reply(
+      `\u274C \u041D\u043E\u043C\u0435\u0440 ${phone} \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430.\n\n\u041E\u0431\u0440\u0430\u0442\u0438\u0442\u0435\u0441\u044C \u043A \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440\u0443.`,
+      { reply_markup: retryKb }
+    );
   }
 });
 
@@ -97,53 +152,47 @@ bot.on("message:text", async (ctx) => {
   if (session && session.step === "ask_identifier") {
     const identifier = ctx.message.text.trim();
 
-    await ctx.reply("\U0001F50D Проверяю данные в базе парка...");
+    await ctx.reply("\u{1F50D} \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u044E \u0434\u0430\u043D\u043D\u044B\u0435 \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430...");
 
     const result = await verifyDriver(identifier);
 
     if (result.authorized) {
-      userSessions[ctx.from.id] = {
-        step: "done",
-        authorized: true,
-        driver: result.driver,
-      };
+      userSessions[ctx.from.id] = { step: "done", authorized: true, driver: result.driver };
 
       const mainKb = {
         keyboard: [
-          [{ text: "\U0001F680 Открыть приложение", web_app: { url: WEBAPP_URL } }],
-          [{ text: "\U0001F4CA Быстрый статус" }],
-          [{ text: "\u2753 Помощь" }],
+          [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: WEBAPP_URL } }],
+          [{ text: "\u{1F4CA} \u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441" }],
+          [{ text: "\u2753 \u041F\u043E\u043C\u043E\u0449\u044C" }],
         ],
         resize_keyboard: true,
       };
 
       await ctx.reply(
-        `\u2705 ${result.driver.name || "Водитель"}, вы авторизованы!\n\n` +
-        `\U0001F197 Добро пожаловать в Золотой Парк.\n` +
-        `Нажмите \u00ABОткрыть приложение\u00BB для работы.`,
+        `\u2705 ${result.driver.name || "\u0412\u043E\u0434\u0438\u0442\u0435\u043B\u044C"}, \u0432\u044B \u0430\u0432\u0442\u043E\u0440\u0438\u0437\u043E\u0432\u0430\u043D\u044B!\n\n\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C \u0432 \u0417\u043E\u043B\u043E\u0442\u043E\u0439 \u041F\u0430\u0440\u043A.`,
         { reply_markup: mainKb }
       );
     } else {
       userSessions[ctx.from.id] = { step: "ask_identifier" };
+
+      const retryKb = {
+        keyboard: [
+          [{ text: "\u{1F4F1} \u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440", request_contact: true }],
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      };
+
       await ctx.reply(
-        `\u274C Данные не найдены: «${identifier}»\n\n` +
-        `Проверьте номер телефона или водительское удостоверение.\n` +
-        `Или нажмите /start для начала.`,
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "\U0001F504 Попробовать снова", callback_data: "retry" }],
-              [{ text: "\u2753 Помощь", callback_data: "help" }],
-            ],
-          },
-        }
+        `\u274C \u041D\u043E\u043C\u0435\u0440 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D.\n\n\u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0441\u043D\u043E\u0432\u0430 \u0438\u043B\u0438 \u043E\u0431\u0440\u0430\u0442\u0438\u0442\u0435\u0441\u044C \u043A \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440\u0443.`,
+        { reply_markup: retryKb }
       );
     }
     return;
   }
 
   if (ctx.message.web_app_data) {
-    await ctx.reply("\u2705 Данные из приложения получены!");
+    await ctx.reply("\u2705 \u0414\u0430\u043D\u043D\u044B\u0435 \u0438\u0437 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044F \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u044B!");
     return;
   }
 });
@@ -151,39 +200,47 @@ bot.on("message:text", async (ctx) => {
 bot.callbackQuery("retry", async (ctx) => {
   await ctx.answerCallbackQuery();
   userSessions[ctx.from.id] = { step: "ask_identifier" };
-  await ctx.reply("Введите номер телефона или водительское удостоверение:");
+
+  const kb = {
+    keyboard: [
+      [{ text: "\u{1F4F1} \u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440", request_contact: true }],
+    ],
+    resize_keyboard: true,
+    one_time_keyboard: true,
+  };
+
+  await ctx.reply("\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u043A\u043D\u043E\u043F\u043A\u0443 \u043D\u0438\u0436\u0435 \u0438\u043B\u0438 \u0432\u0432\u0435\u0434\u0438\u0442\u0435 \u043D\u043E\u043C\u0435\u0440:", { reply_markup: kb });
 });
 
 bot.callbackQuery("stats", async (ctx) => {
   await ctx.answerCallbackQuery();
   await ctx.reply(
-    "\U0001F4CA Статистика доступна в приложении.\nНажмите \u00ABОткрыть приложение\u00BB"
+    "\u{1F4CA} \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0430 \u0432 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0438.\n\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u00AB\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435\u00BB"
   );
 });
 
 bot.callbackQuery("help", async (ctx) => {
   await ctx.answerCallbackQuery();
   await ctx.reply(
-    "\u2753 Помощь\n\n" +
-    "\U0001F680 Открыть приложение \u2014 управление заказами\n" +
-    "\U0001F4CA Быстрый статус \u2014 статистика за день\n" +
-    "\U0001F4DE Поддержка: @ZP_help\n\n" +
-    "Если не можете войти, обратитесь к диспетчеру."
+    "\u2753 \u041F\u043E\u043C\u043E\u0449\u044C\n\n" +
+    "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u2014 \u0443\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u0437\u0430\u043A\u0430\u0437\u0430\u043C\u0438\n" +
+    "\u{1F4CA} \u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441 \u2014 \u0441\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 \u0437\u0430 \u0434\u0435\u043D\u044C\n" +
+    "\u{1F4DE} \u041F\u043E\u0434\u0434\u0435\u0440\u0436\u043A\u0430: @ZP_help"
   );
 });
 
-bot.hears("\U0001F4CA Быстрый статус", async (ctx) => {
+bot.hears("\u{1F4CA} \u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441", async (ctx) => {
   await ctx.reply(
-    "\U0001F4CA Статистика доступна в приложении.\nНажмите \u00ABОткрыть приложение\u00BB"
+    "\u{1F4CA} \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u0430 \u0432 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0438.\n\u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u00AB\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435\u00BB"
   );
 });
 
-bot.hears("\u2753 Помощь", async (ctx) => {
+bot.hears("\u2753 \u041F\u043E\u043C\u043E\u0449\u044C", async (ctx) => {
   await ctx.reply(
-    "\u2753 Помощь\n\n" +
-    "\U0001F680 Открыть приложение \u2014 управление заказами\n" +
-    "\U0001F4CA Быстрый статус \u2014 статистика за день\n" +
-    "\U0001F4DE Поддержка: @ZP_help"
+    "\u2753 \u041F\u043E\u043C\u043E\u0449\u044C\n\n" +
+    "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u2014 \u0443\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435 \u0437\u0430\u043A\u0430\u0437\u0430\u043C\u0438\n" +
+    "\u{1F4CA} \u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441 \u2014 \u0441\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 \u0437\u0430 \u0434\u0435\u043D\u044C\n" +
+    "\u{1F4DE} \u041F\u043E\u0434\u0434\u0435\u0440\u0436\u043A\u0430: @ZP_help"
   );
 });
 
