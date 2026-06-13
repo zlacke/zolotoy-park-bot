@@ -71,16 +71,23 @@ API (zolotoybot.ru):
 
 == БЛОКЕРЫ ==
 - AdminVPS блокирует Telegram IP (149.154.x.x) — решено через Cloudflare Worker
-- fleet.taxi.yandex.net работает ТОЛЬКО по IPv6 — ни сервер, ни Worker не могут достучаться
-- РЕШЕНИЕ: написать в поддержку AdminVPS чтобы включили IPv6, или сменить хостинг
+- fleet.taxi.yandex.net работает ТОЛЬКО по IPv6 (2a02:6b8:0:3400:0:71d:0:1c8)
+- AdminVPS не имеет глобального IPv6 — Cannot assign requested address
+- Cloudflare Worker тоже не может достучаться (522 Connection Timed Out)
+- fleet-api.taxi.yandex.net (77.88.21.107) — IPv4 работает, но другой API (все 404)
+- 77.88.55.77:443 — TCP работает, но SSL cert для другого домена
+- НОВОЕ РЕШЕНИЕ: бот на bothost.ru (Нидерланды) делает запрос к Fleet API напрямую
+- Нужно добавить YANDEX_API_KEY и YANDEX_PARK_ID в Env bothost.ru
 
 == ЧТО НУЖНО СДЕЛАТЬ ЗАВТРА ==
 1. ПЕРЕГЕНЕРИРОВАТЬ BOT_TOKEN в @BotFather (/revoke)
-2. Обновить токен в .env на сервере: nano /opt/taxi-miniapp/.env
-3. Перезапустить бота на bothost.ru
-4. Написать в поддержку AdminVPS: "Включите IPv6 для сервера 138.16.226.236"
-5. Как IPv6 заработает — авторизация через Fleet API заработает
-6. Протестировать полный flow
+2. Обновить токен в .env на сервере AdminVPS: nano /opt/taxi-miniapp/.env
+3. Добавить в bothost.ru Env переменные:
+   - YANDEX_API_KEY=WuSXpVSsNiFGqFEiWPlIimXSSQaLXtrHJ
+   - YANDEX_PARK_ID=0218b80d491a460f92f1b05afc51a725
+4. Перезапустить бота на bothost.ru
+5. Протестировать: написать боту /start → ввести номер телефона/ВУ
+6. Если bothost.ru не может достучаться до fleet.taxi.yandex.net — писать в AdminVPS про IPv6
 
 == КОМАНДЫ ДЛЯ СЕРВЕРА ==
 

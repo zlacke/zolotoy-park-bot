@@ -21,6 +21,9 @@ async function verifyDriver(identifier) {
   }
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
     const resp = await fetch(
       `https://fleet.taxi.yandex.net/parks/${YANDEX_PARK_ID}/driver-profiles/list`,
       {
@@ -30,9 +33,10 @@ async function verifyDriver(identifier) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ park_id: YANDEX_PARK_ID, limit: 2000 }),
-        signal: AbortSignal.timeout(15000),
+        signal: controller.signal,
       }
     );
+    clearTimeout(timeoutId);
 
     if (!resp.ok) {
       const text = await resp.text();
