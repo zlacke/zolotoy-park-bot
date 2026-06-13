@@ -1,50 +1,50 @@
- at Module._compile (node:internal/modules/cjs/loader:1364:14)
-    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
-    at Module.load (node:internal/modules/cjs/loader:1203:32)
-    at Module._load (node:internal/modules/cjs/loader:1019:12)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
-    at node:internal/main/run_main_module:28:49
+throw new Error(errors[0]);
+        ^
+
+Error: Invalid L1 filter 'contact' given in 'contact'. Permitted values are: 'message', 'edited_message', 'channel_post', 'edited_channel_post', 'business_connection', 'business_message', 'edited_business_message', 'deleted_business_messages', 'guest_message', 'inline_query', 'chosen_inline_result', 'callback_query', 'shipping_query', 'pre_checkout_query', 'poll', 'poll_answer', 'my_chat_member', 'chat_member', 'managed_bot', 'chat_join_request', 'message_reaction', 'message_reaction_count', 'chat_boost', 'removed_chat_boost', 'purchased_paid_media'.
+    at check (/app/node_modules/grammy/out/filter.js:110:15)
+    at /app/node_modules/grammy/out/filter.js:49:48
+    at Array.flatMap (<anonymous>)
+    at compile (/app/node_modules/grammy/out/filter.js:49:33)
+    at /app/node_modules/grammy/out/filter.js:37:22
+    at matchFilter (/app/node_modules/grammy/out/filter.js:40:7)
+    at Object.filterQuery (/app/node_modules/grammy/out/context.js:7:50)
+    at Bot.on (/app/node_modules/grammy/out/composer.js:184:53)
+    at Bot.on (/app/node_modules/grammy/out/bot.js:135:22)
+    at Object.<anonymous> (/app/index.js:106:5)
 
 Node.js v18.20.8
-/app/index.js:11
-const bot = bot = new Bot(BOT_TOKEN);
-                ^
+/app/node_modules/grammy/out/filter.js:110
+        throw new Error(errors[0]);
+        ^
 
-ReferenceError: Cannot access 'bot' before initialization
-    at Object.<anonymous> (/app/index.js:11:17)
-    at Module._compile (node:internal/modules/cjs/loader:1364:14)
-    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
-    at Module.load (node:internal/modules/cjs/loader:1203:32)
-    at Module._load (node:internal/modules/cjs/loader:1019:12)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
-    at node:internal/main/run_main_module:28:49
-
-Node.js v18.20.8
-/app/index.js:11
-const bot = bot = new Bot(BOT_TOKEN);
-                ^
-
-ReferenceError: Cannot access 'bot' before initialization
-    at Object.<anonymous> (/app/index.js:11:17)
-    at Module._compile (node:internal/modules/cjs/loader:1364:14)
-    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
-    at Module.load (node:internal/modules/cjs/loader:1203:32)
-    at Module._load (node:internal/modules/cjs/loader:1019:12)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
-    at node:internal/main/run_main_module:28:49
+Error: Invalid L1 filter 'contact' given in 'contact'. Permitted values are: 'message', 'edited_message', 'channel_post', 'edited_channel_post', 'business_connection', 'business_message', 'edited_business_message', 'deleted_business_messages', 'guest_message', 'inline_query', 'chosen_inline_result', 'callback_query', 'shipping_query', 'pre_checkout_query', 'poll', 'poll_answer', 'my_chat_member', 'chat_member', 'managed_bot', 'chat_join_request', 'message_reaction', 'message_reaction_count', 'chat_boost', 'removed_chat_boost', 'purchased_paid_media'.
+    at check (/app/node_modules/grammy/out/filter.js:110:15)
+    at /app/node_modules/grammy/out/filter.js:49:48
+    at Array.flatMap (<anonymous>)
+    at compile (/app/node_modules/grammy/out/filter.js:49:33)
+    at /app/node_modules/grammy/out/filter.js:37:22
+    at matchFilter (/app/node_modules/grammy/out/filter.js:40:7)
+    at Object.filterQuery (/app/node_modules/grammy/out/context.js:7:50)
+    at Bot.on (/app/node_modules/grammy/out/composer.js:184:53)
+    at Bot.on (/app/node_modules/grammy/out/bot.js:135:22)
+    at Object.<anonymous> (/app/index.js:106:5)
 
 Node.js v18.20.8
-/app/index.js:11
-const bot = bot = new Bot(BOT_TOKEN);
-                ^
+/app/node_modules/grammy/out/filter.js:110
+        throw new Error(errors[0]);
+        ^
 
-ReferenceError: Cannot access 'bot' before initialization
-    at Object.<anonymous> (/app/index.js:11:17)
-    at Module._compile (node:internal/modules/cjs/loader:1364:14)
-    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
-    at Module.load (node:internal/modules/cjs/loader:1203:32)
-    at Module._load (node:internal/modules/cjs/loader:1019:12)
-    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:128:12)
-    at node:internal/main/run_main_module:28:49
+Error: Invalid L1 filter 'contact' given in 'contact'. Permitted values are: 'message', 'edited_message', 'channel_post', 'edited_channel_post', 'business_connection', 'business_message', 'edited_business_message', 'deleted_business_messages', 'guest_message', 'inline_query', 'chosen_inline_result', 'callback_query', 'shipping_query', 'pre_checkout_query', 'poll', 'poll_answer', 'my_chat_member', 'chat_member', 'managed_bot', 'chat_join_request', 'message_reaction', 'message_reaction_count', 'chat_boost', 'removed_chat_boost', 'purchased_paid_media'.
+    at check (/app/node_modules/grammy/out/filter.js:110:15)
+    at /app/node_modules/grammy/out/filter.js:49:48
+    at Array.flatMap (<anonymous>)
+    at compile (/app/node_modules/grammy/out/filter.js:49:33)
+    at /app/node_modules/grammy/out/filter.js:37:22
+    at matchFilter (/app/node_modules/grammy/out/filter.js:40:7)
+    at Object.filterQuery (/app/node_modules/grammy/out/context.js:7:50)
+    at Bot.on (/app/node_modules/grammy/out/composer.js:184:53)
+    at Bot.on (/app/node_modules/grammy/out/bot.js:135:22)
+    at Object.<anonymous> (/app/index.js:106:5)
 
 Node.js v18.20.8

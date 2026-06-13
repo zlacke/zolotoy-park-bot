@@ -103,53 +103,58 @@ bot.command("app", async (ctx) => {
   }
 });
 
-bot.on("contact", async (ctx) => {
-  const contact = ctx.message.contact;
-  const phone = contact.phone_number;
-  const userId = ctx.from.id;
+bot.on("message", async (ctx) => {
+  if (ctx.message.contact) {
+    const contact = ctx.message.contact;
+    const phone = contact.phone_number;
+    const userId = ctx.from.id;
 
-  await ctx.reply("\u{1F50D} \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u044E \u0434\u0430\u043D\u043D\u044B\u0435 \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430...");
+    await ctx.reply("\u{1F50D} \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u044E \u0434\u0430\u043D\u043D\u044B\u0435 \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430...");
 
-  const result = await verifyDriver(phone);
+    const result = await verifyDriver(phone);
 
-  if (result.authorized) {
-    userSessions[userId] = { step: "done", authorized: true, driver: result.driver };
+    if (result.authorized) {
+      userSessions[userId] = { step: "done", authorized: true, driver: result.driver };
 
-    const mainKb = {
-      keyboard: [
-        [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: WEBAPP_URL } }],
-        [{ text: "\u{1F4CA} \u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441" }],
-        [{ text: "\u2753 \u041F\u043E\u043C\u043E\u0449\u044C" }],
-      ],
-      resize_keyboard: true,
-    };
+      const mainKb = {
+        keyboard: [
+          [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: WEBAPP_URL } }],
+          [{ text: "\u{1F4CA} \u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441" }],
+          [{ text: "\u2753 \u041F\u043E\u043C\u043E\u0449\u044C" }],
+        ],
+        resize_keyboard: true,
+      };
 
-    await ctx.reply(
-      `\u2705 ${result.driver.name || "\u0412\u043E\u0434\u0438\u0442\u0435\u043B\u044C"}, \u0432\u044B \u0430\u0432\u0442\u043E\u0440\u0438\u0437\u043E\u0432\u0430\u043D\u044B!\n\n\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C \u0432 \u0417\u043E\u043B\u043E\u0442\u043E\u0439 \u041F\u0430\u0440\u043A.`,
-      { reply_markup: mainKb }
-    );
-  } else {
-    userSessions[userId] = { step: "ask_identifier" };
+      await ctx.reply(
+        `\u2705 ${result.driver.name || "\u0412\u043E\u0434\u0438\u0442\u0435\u043B\u044C"}, \u0432\u044B \u0430\u0432\u0442\u043E\u0440\u0438\u0437\u043E\u0432\u0430\u043D\u044B!\n\n\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C \u0432 \u0417\u043E\u043B\u043E\u0442\u043E\u0439 \u041F\u0430\u0440\u043A.`,
+        { reply_markup: mainKb }
+      );
+    } else {
+      userSessions[userId] = { step: "ask_identifier" };
 
-    const retryKb = {
-      keyboard: [
-        [{ text: "\u{1F4F1} \u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440", request_contact: true }],
-      ],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    };
+      const retryKb = {
+        keyboard: [
+          [{ text: "\u{1F4F1} \u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440", request_contact: true }],
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      };
 
-    await ctx.reply(
-      `\u274C \u041D\u043E\u043C\u0435\u0440 ${phone} \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430.\n\n\u041E\u0431\u0440\u0430\u0442\u0438\u0442\u0435\u0441\u044C \u043A \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440\u0443.`,
-      { reply_markup: retryKb }
-    );
+      await ctx.reply(
+        `\u274C \u041D\u043E\u043C\u0435\u0440 ${phone} \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430.\n\n\u041E\u0431\u0440\u0430\u0442\u0438\u0442\u0435\u0441\u044C \u043A \u0434\u0438\u0441\u043F\u0435\u0442\u0447\u0435\u0440\u0443.`,
+        { reply_markup: retryKb }
+      );
+    }
+    return;
   }
-});
 
-bot.on("message:text", async (ctx) => {
+  if (ctx.message.web_app_data) {
+    await ctx.reply("\u2705 \u0414\u0430\u043D\u043D\u044B\u0435 \u0438\u0437 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044F \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u044B!");
+    return;
+  }
+
   const session = userSessions[ctx.from.id];
-
-  if (session && session.step === "ask_identifier") {
+  if (session && session.step === "ask_identifier" && ctx.message.text) {
     const identifier = ctx.message.text.trim();
 
     await ctx.reply("\u{1F50D} \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u044E \u0434\u0430\u043D\u043D\u044B\u0435 \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430...");
