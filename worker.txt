@@ -1,0 +1,39 @@
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+
+    // Telegram API
+    if (path.startsWith("/bot")) {
+      const telegramUrl = "https://api.telegram.org" + path + url.search;
+      const newReq = new Request(telegramUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+      });
+      const resp = await fetch(newReq);
+      return new Response(resp.body, {
+        status: resp.status,
+        headers: { "Access-Control-Allow-Origin": "*" },
+      });
+    }
+
+    // Yandex Fleet API
+    if (path.startsWith("/yandex")) {
+      const yandexPath = path.replace("/yandex", "");
+      const yandexUrl = "https://fleet.taxi.yandex.net" + yandexPath + url.search;
+      const newReq = new Request(yandexUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+      });
+      const resp = await fetch(newReq);
+      return new Response(resp.body, {
+        status: resp.status,
+        headers: { "Access-Control-Allow-Origin": "*" },
+      });
+    }
+
+    return new Response("OK", { status: 200 });
+  },
+};

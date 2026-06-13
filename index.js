@@ -10,97 +10,25 @@ if (!BOT_TOKEN) {
 }
 
 const bot = new Bot(BOT_TOKEN);
-const userPhones = {};
-
-async function checkPhone(phone) {
-  try {
-    const resp = await fetch(`${API_URL}/api/driver/check_phone?phone=${encodeURIComponent(phone)}`);
-    const data = await resp.json();
-    return data;
-  } catch (e) {
-    console.error("Check phone error:", e);
-    return { authorized: false };
-  }
-}
-
-async function registerDriver(telegramId, phone, name) {
-  try {
-    const resp = await fetch(`${API_URL}/api/driver/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ telegram_id: telegramId, phone, name }),
-    });
-    return await resp.json();
-  } catch (e) {
-    console.error("Register error:", e);
-    return { ok: false };
-  }
-}
+const userSessions = {};
 
 bot.command("start", async (ctx) => {
-  const kb = {
-    keyboard: [
-      [{ text: "\U0001F4F1 Отправить номер", request_contact: true }],
-    ],
-    resize_keyboard: true,
-    one_time_keyboard: true,
-  };
-
+  userSessions[ctx.from.id] = { step: "ask_identifier" };
   await ctx.reply(
-    "\U0001F44B Добро пожаловать!\n\n" +
-    "Для входа отправьте свой номер телефона, нажав кнопку ниже.",
-    { reply_markup: kb }
+    "\U0001F44B Добро пожаловать в Золотой Парк!\n\n" +
+    "Для входа введите ваш номер телефона или номер водительского удостоверения:",
+    {
+      reply_markup: {
+        force_reply: true,
+        selective: true,
+      },
+    }
   );
 });
 
-bot.on("contact", async (ctx) => {
-  const contact = ctx.message.contact;
-  const phone = contact.phone_number;
-  const userId = ctx.from.id;
-
-  const result = await checkPhone(phone);
-
-  if (result.authorized) {
-    await registerDriver(userId, phone, result.driver_name || contact.first_name);
-    userPhones[userId] = { phone, name: result.driver_name || contact.first_name };
-
-    const mainKb = {
-      keyboard: [
-        [{ text: "\U0001F680 Открыть приложение", web_app: { url: WEBAPP_URL } }],
-        [{ text: "\U0001F4CA Быстрый статус" }],
-        [{ text: "\u2753 Помощь" }],
-      ],
-      resize_keyboard: true,
-    };
-
-    await ctx.reply(
-      `\u2705 Авторизация прошла успешно!\n\n` +
-      `\U0001F464 ${result.driver_name || contact.first_name}\n` +
-      `\U0001F4F1 ${phone}\n\n` +
-      `Нажмите \u00ABОткрыть приложение\u00BB для работы.`,
-      { reply_markup: mainKb }
-    );
-  } else {
-    const retryKb = {
-      keyboard: [
-        [{ text: "\U0001F4F1 Отправить номер", request_contact: true }],
-        [{ text: "\u2753 Помощь" }],
-      ],
-      resize_keyboard: true,
-      one_time_keyboard: true,
-    };
-
-    await ctx.reply(
-      `\u274C Номер ${phone} не найден в базе парка.\n\n` +
-      `Обратитесь к диспетчеру для регистрации.`,
-      { reply_markup: retryKb }
-    );
-  }
-});
-
 bot.command("app", async (ctx) => {
-  const userId = ctx.from.id;
-  if (userPhones[userId]) {
+  const session = userSessions[ctx.from.id];
+  if (session && session.authorized) {
     const kb = {
       inline_keyboard: [
         [{ text: "\U0001F680 Открыть приложение", web_app: { url: WEBAPP_URL } }],
@@ -112,8 +40,101 @@ bot.command("app", async (ctx) => {
   }
 });
 
+bot.on("message:text", async (ctx) => {
+  const session = userSessions[ctx.from.id];
+
+  if (session && session.step === "ask_identifier") {
+    const identifier = ctx.message.text.trim();
+
+    await ctx.reply("\U0001F50D Проверяю данные...");
+
+    try {
+      const resp = await fetch(
+        `${API_URL}/api/driver/verify?identifier=${encodeURIComponent(identifier)}`
+      );
+      const data = await resp.json();
+
+      if (data.authorized) {
+        userSessions[ctx.from.id] = {
+          step: "done",
+          authorized: true,
+          driver: data.driver,
+        };
+
+        const mainKb = {
+          keyboard: [
+            [{ text: "\U0001F680 Открыть приложение", web_app: { url: WEBAPP_URL } }],
+            [{ text: "\U0001F4CA Быстрый статус" }],
+            [{ text: "\u2753 Помощь" }],
+          ],
+          resize_keyboard: true,
+        };
+
+        await ctx.reply(
+          `\u2705 ${data.driver.name || "Водитель"}, вы авторизованы!\n\n` +
+          `\U0001F197 Добро пожаловать в Золотой Парк.\n` +
+          `Нажмите \u00ABОткрыть приложение\u00BB для работы.`,
+          { reply_markup: mainKb }
+        );
+      } else {
+        userSessions[ctx.from.id] = { step: "ask_identifier" };
+        await ctx.reply(
+          `\u274C Данные не найдены: «${identifier}»\n\n` +
+          `Проверьте номер телефона или водительское удостоверение и попробуйте снова.\n` +
+          `Или нажмите /start для начала.`,
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: "\U0001F504 Попробовать снова", callback_data: "retry" }],
+                [{ text: "\u2753 Помощь", callback_data: "help" }],
+              ],
+            },
+          }
+        );
+      }
+    } catch (e) {
+      console.error("Verify error:", e);
+      await ctx.reply(
+        "\u26A0\uFE0F Ошибка проверки. Попробуйте позже или обратитесь к диспетчеру."
+      );
+    }
+    return;
+  }
+
+  if (ctx.message.web_app_data) {
+    await ctx.reply("\u2705 Данные из приложения получены!");
+    return;
+  }
+});
+
+bot.callbackQuery("retry", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  userSessions[ctx.from.id] = { step: "ask_identifier" };
+  await ctx.reply("Введите номер телефона или водительское удостоверение:");
+});
+
+bot.callbackQuery("stats", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await ctx.reply(
+    "\U0001F4CA Статистика доступна в приложении.\nНажмите \u00ABОткрыть приложение\u00BB"
+  );
+});
+
+bot.callbackQuery("help", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await ctx.reply(
+    "\u2753 Помощь\n\n" +
+    "\U0001F680 Открыть приложение \u2014 управление заказами\n" +
+    "\U0001F4CA Быстрый статус \u2014 статистика за день\n" +
+    "\U0001F4DE Поддержка: @ZP_help\n\n" +
+    "Если вы не можете войти, обратитесь к диспетчеру."
+  );
+});
+
 bot.hears("\U0001F4CA Быстрый статус", async (ctx) => {
-  await ctx.reply("\U0001F4CA Статистика доступна в приложении.\nНажмите \u00ABОткрыть приложение\u00BB");
+  await ctx.reply(
+    "\U0001F4CA Статистика доступна в приложении.\nНажмите \u00ABОткрыть приложение\u00BB"
+  );
 });
 
 bot.hears("\u2753 Помощь", async (ctx) => {
@@ -123,26 +144,6 @@ bot.hears("\u2753 Помощь", async (ctx) => {
     "\U0001F4CA Быстрый статус \u2014 статистика за день\n" +
     "\U0001F4DE Поддержка: @ZP_help"
   );
-});
-
-bot.on("message", async (ctx) => {
-  if (ctx.message.web_app_data) {
-    await ctx.reply("\u2705 Данные из приложения получены!");
-    return;
-  }
-  const userId = ctx.from.id;
-  if (userPhones[userId]) {
-    const kb = {
-      inline_keyboard: [
-        [{ text: "\U0001F680 Открыть приложение", web_app: { url: WEBAPP_URL } }],
-        [{ text: "\U0001F4CA Быстрый статус", callback_data: "stats" }],
-        [{ text: "\u2753 Помощь", callback_data: "help" }],
-      ],
-    };
-    await ctx.reply("Используйте кнопки:", { reply_markup: kb });
-  } else {
-    await ctx.reply("\u274C Сначала авторизуйтесь. Нажмите /start");
-  }
 });
 
 bot.catch((err) => {
