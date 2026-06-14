@@ -102,6 +102,17 @@ bot.on("message", async (ctx) => {
     if (result.authorized) {
       userSessions[userId] = { step: "done", authorized: true, driver: result.driver };
 
+      fetch(`${SERVER_URL}/api/driver/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegram_id: userId,
+          phone: result.driver.phone || "",
+          name: result.driver.name || "",
+          yandex_driver_id: result.driver.id || "",
+        }),
+      }).catch(() => {});
+
       const mainKb = {
         keyboard: [
           [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: WEBAPP_URL } }],
@@ -149,6 +160,17 @@ bot.on("message", async (ctx) => {
 
     if (result.authorized) {
       userSessions[ctx.from.id] = { step: "done", authorized: true, driver: result.driver };
+
+      fetch(`${SERVER_URL}/api/driver/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegram_id: ctx.from.id,
+          phone: result.driver.phone || "",
+          name: result.driver.name || "",
+          yandex_driver_id: result.driver.id || "",
+        }),
+      }).catch(() => {});
 
       const mainKb = {
         keyboard: [
