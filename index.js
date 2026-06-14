@@ -4,7 +4,6 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEBAPP_URL = process.env.WEBAPP_URL || "https://zolotoybot.ru";
 const YANDEX_API_KEY = process.env.YANDEX_API_KEY || "";
 const YANDEX_PARK_ID = process.env.YANDEX_PARK_ID || "";
-const YANDEX_CLIENT_ID = process.env.YANDEX_CLIENT_ID || `taxi/park/${YANDEX_PARK_ID}`;
 
 if (!BOT_TOKEN) {
   console.error("BOT_TOKEN not set!");
@@ -14,26 +13,23 @@ if (!BOT_TOKEN) {
 const bot = new Bot(BOT_TOKEN);
 const userSessions = {};
 
-const API_PROXY_URL = process.env.API_PROXY_URL || "https://zolotoybot.ru/api/yandex-proxy";
-
 async function verifyDriver(identifier) {
-  if (!YANDEX_API_KEY || !YANDEX_PARK_ID) {
-    console.error("Yandex API not configured");
-    return { authorized: false, error: "API not configured" };
-  }
+  const SERVER_URL = WEBAPP_URL || "https://zolotoybot.ru";
 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000);
 
-    const resp = await fetch(API_PROXY_URL, {
+    const url = `${SERVER_URL}/api/yandex-proxy`;
+    console.log("Calling proxy:", url);
+
+    const resp = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_id: YANDEX_CLIENT_ID,
-        api_key: YANDEX_API_KEY,
+        client_id: "x",
+        api_key: "x",
         park_id: YANDEX_PARK_ID,
-        limit: 2000,
       }),
       signal: controller.signal,
     });
@@ -41,13 +37,13 @@ async function verifyDriver(identifier) {
 
     if (!resp.ok) {
       const text = await resp.text();
-      console.error("API proxy error:", resp.status, text.substring(0, 200));
+      console.error("Proxy error:", resp.status, text.substring(0, 500));
       return { authorized: false, error: `API error ${resp.status}` };
     }
 
     const data = await resp.json();
     const drivers = data.driver_profiles || [];
-    console.log(`Found ${drivers.length} drivers in fleet`);
+    console.log(`Found ${drivers.length} drivers.`);
 
     const cleanId = identifier.replace(/[\s\-\(\)\+]/g, "");
 
