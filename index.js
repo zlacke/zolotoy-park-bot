@@ -147,7 +147,7 @@ bot.catch((err) => {
   console.error("Bot error:", err);
 });
 
-console.log("Bot starting...");
+console.log("Bot starting (v2)...");
 bot.start({
   onStart: (botInfo) => {
     console.log(`Bot started: @${botInfo.username}`);
