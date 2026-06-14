@@ -1,7 +1,7 @@
 const { Bot } = require("grammy");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const WEBAPP_URL = process.env.WEBAPP_URL || "https://zolotoybot.ru";
+const SERVER_URL = process.env.WEBAPP_URL || "https://zolotoybot.ru";
 const YANDEX_API_KEY = process.env.YANDEX_API_KEY || "";
 const YANDEX_PARK_ID = process.env.YANDEX_PARK_ID || "";
 
@@ -14,8 +14,6 @@ const bot = new Bot(BOT_TOKEN);
 const userSessions = {};
 
 async function verifyDriver(identifier) {
-  const SERVER_URL = WEBAPP_URL || "https://zolotoybot.ru";
-
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -71,7 +69,7 @@ bot.command("app", async (ctx) => {
   if (session && session.authorized) {
     const kb = {
       inline_keyboard: [
-        [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: WEBAPP_URL } }],
+        [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: SERVER_URL } }],
       ],
     };
     await ctx.reply("\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0432\u0430\u0439\u0442\u0435 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435:", { reply_markup: kb });
