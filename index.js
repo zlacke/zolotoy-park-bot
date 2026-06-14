@@ -71,7 +71,7 @@ bot.command("app", async (ctx) => {
   if (session && session.authorized) {
     const kb = {
       inline_keyboard: [
-        [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: SERVER_URL } }],
+        [{ text: "\u{1F4CA} \u041C\u041E\u041D\u0418\u0422\u041E\u0420\u0418\u041D\u0413", web_app: { url: SERVER_URL } }],
       ],
     };
     await ctx.reply("\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0432\u0430\u0439\u0442\u0435 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435:", { reply_markup: kb });
@@ -119,7 +119,7 @@ bot.on("message", async (ctx) => {
         {
           reply_markup: {
             inline_keyboard: [
-              [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: `${SERVER_URL}?user_id=${ctx.from.id}` } }],
+              [{ text: "\u{1F4CA} \u041C\u041E\u041D\u0418\u0422\u041E\u0420\u0418\u041D\u0413", web_app: { url: `${SERVER_URL}?user_id=${ctx.from.id}` } }],
             ],
           },
         }
