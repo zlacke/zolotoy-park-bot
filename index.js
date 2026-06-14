@@ -111,7 +111,7 @@ bot.on("message", async (ctx) => {
         {
           reply_markup: {
             inline_keyboard: [
-              [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: SERVER_URL } }],
+              [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: `${SERVER_URL}?user_id=${ctx.from.id}` } }],
             ],
           },
         }
