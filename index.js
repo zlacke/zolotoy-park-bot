@@ -18,18 +18,17 @@ async function verifyDriver(identifier) {
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     const url = `${SERVER_URL}/api/yandex-proxy`;
-    console.log("Calling proxy:", url);
+    console.log("Calling proxy:", url, "id:", identifier);
 
     const resp = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        client_id: "x",
-        api_key: "x",
         park_id: YANDEX_PARK_ID,
+        identifier: identifier,
       }),
       signal: controller.signal,
     });
@@ -42,27 +41,13 @@ async function verifyDriver(identifier) {
     }
 
     const data = await resp.json();
-    const drivers = data.driver_profiles || [];
-    console.log(`Found ${drivers.length} drivers.`);
+    console.log("Proxy result:", data.found ? "FOUND" : "not found");
 
-    const cleanId = identifier.replace(/[\s\-\(\)\+]/g, "");
-
-    for (const driver of drivers) {
-      const profile = driver.driver_profile || {};
-      const phones = profile.phones || [];
-      const licenseNum = (profile.driver_license || {}).number || "";
-      const name = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
-      const driverId = profile.id || "";
-
-      const cleanPhones = phones.map(p => p.replace(/[\s\-\(\)\+]/g, ""));
-      const cleanLicense = licenseNum.replace(/[\s\-\(\)\+]/g, "");
-
-      if (cleanPhones.includes(cleanId) || cleanId === cleanLicense) {
-        return {
-          authorized: true,
-          driver: { id: driverId, name, phone: phones[0] || "", license: licenseNum },
-        };
-      }
+    if (data.found) {
+      return {
+        authorized: true,
+        driver: { id: data.id, name: data.name, phone: data.phone, license: data.license },
+      };
     }
 
     return { authorized: false };
