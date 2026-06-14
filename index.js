@@ -85,6 +85,12 @@ bot.on("message", async (ctx) => {
   }
 
   const session = userSessions[ctx.from.id];
+  if (session && session.step !== "ask_identifier" && ctx.message.text && ctx.message.text.includes("\u041F\u0435\u0440\u0435\u0439\u0442\u0438")) {
+    userSessions[ctx.from.id] = { step: "ask_identifier" };
+    await ctx.reply("\u{1F44B} \u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043D\u043E\u0432\u044B\u0439 \u043D\u043E\u043C\u0435\u0440 \u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0430 \u0438\u043B\u0438 \u0412\u0423:");
+    return;
+  }
+
   if (session && session.step === "ask_identifier" && ctx.message.text) {
     const identifier = ctx.message.text.trim();
 
@@ -116,6 +122,14 @@ bot.on("message", async (ctx) => {
           },
         }
       );
+
+      const kb = {
+        keyboard: [
+          [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0439\u0442\u0438 \u043F\u043E\u0434 \u0434\u0440\u0443\u0433\u043E\u0439 \u043D\u043E\u043C\u0435\u0440/\u0412\u0423" }],
+        ],
+        resize_keyboard: true,
+      };
+      await ctx.reply("\u041C\u043E\u0436\u0435\u0442\u0435 \u043F\u0435\u0440\u0435\u0439\u0442\u0438 \u043F\u043E\u0434 \u0434\u0440\u0443\u0433\u043E\u0439 \u0430\u043A\u043A\u0430\u0443\u043D\u0442:", { reply_markup: kb });
     } else {
       userSessions[ctx.from.id].step = "ask_identifier";
 
