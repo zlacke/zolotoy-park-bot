@@ -156,7 +156,15 @@ bot.on("message", async (ctx) => {
 
   const session = userSessions[ctx.from.id];
   if (session && session.step === "ask_identifier" && ctx.message.text) {
-    const identifier = ctx.message.text.trim();
+    const text = ctx.message.text.trim();
+
+    if (text.includes("\u0412\u0432\u0435\u0441\u0442\u0438 \u0412\u0423") || text.includes("\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440")) {
+      await ctx.reply("\u{1F4DD} \u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043D\u043E\u043C\u0435\u0440 \u0412\u0423 \u0438\u043B\u0438 \u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0430 \u0442\u0435\u043A\u0441\u0442\u043E\u043C:");
+      userSessions[ctx.from.id].step = "ask_text_identifier";
+      return;
+    }
+
+    const identifier = text;
 
     await ctx.reply("\u{1F50D} \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u044E \u0434\u0430\u043D\u043D\u044B\u0435 \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430...");
 
@@ -192,6 +200,59 @@ bot.on("message", async (ctx) => {
     } else {
       userSessions[ctx.from.id] = { step: "ask_identifier" };
 
+      const retryKb = {
+        keyboard: [
+          [{ text: "\u{1F4F1} \u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440", request_contact: true }],
+          [{ text: "\u{1F4DD} \u0412\u0432\u0435\u0441\u0442\u0438 \u0412\u0423 \u0438\u043B\u0438 \u0442\u0435\u043B\u0435\u0444\u043E\u043D" }],
+        ],
+        resize_keyboard: true,
+        one_time_keyboard: true,
+      };
+
+      await ctx.reply(
+        `\u274C \u041D\u043E\u043C\u0435\u0440 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D.\n\n\u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0432\u0432\u0435\u0441\u0442\u0438 \u043D\u043E\u043C\u0435\u0440 \u0412\u0423 \u0438\u043B\u0438 \u0442\u0435\u043B\u0435\u0444\u043E\u043D \u0442\u0435\u043A\u0441\u0442\u043E\u043C.`,
+        { reply_markup: retryKb }
+      );
+    }
+    return;
+  }
+
+  if (session && session.step === "ask_text_identifier" && ctx.message.text) {
+    const identifier = ctx.message.text.trim();
+    userSessions[ctx.from.id].step = "ask_identifier";
+
+    await ctx.reply("\u{1F50D} \u041F\u0440\u043E\u0432\u0435\u0440\u044F\u044E \u0434\u0430\u043D\u043D\u044B\u0435 \u0432 \u0431\u0430\u0437\u0435 \u043F\u0430\u0440\u043A\u0430...");
+
+    const result = await verifyDriver(identifier);
+
+    if (result.authorized) {
+      userSessions[ctx.from.id] = { step: "done", authorized: true, driver: result.driver };
+
+      fetch(`${SERVER_URL}/api/driver/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          telegram_id: ctx.from.id,
+          phone: result.driver.phone || "",
+          name: result.driver.name || "",
+          yandex_driver_id: result.driver.id || "",
+        }),
+      }).catch(() => {});
+
+      const mainKb = {
+        keyboard: [
+          [{ text: "\u{1F680} \u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435", web_app: { url: WEBAPP_URL } }],
+          [{ text: "\u{1F4CA} \u0411\u044B\u0441\u0442\u0440\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441" }],
+          [{ text: "\u2753 \u041F\u043E\u043C\u043E\u0449\u044C" }],
+        ],
+        resize_keyboard: true,
+      };
+
+      await ctx.reply(
+        `\u2705 ${result.driver.name || "\u0412\u043E\u0434\u0438\u0442\u0435\u043B\u044C"}, \u0432\u044B \u0430\u0432\u0442\u043E\u0440\u0438\u0437\u043E\u0432\u0430\u043D\u044B!\n\n\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C \u0432 \u0417\u043E\u043B\u043E\u0442\u043E\u0439 \u041F\u0430\u0440\u043A.`,
+        { reply_markup: mainKb }
+      );
+    } else {
       const retryKb = {
         keyboard: [
           [{ text: "\u{1F4F1} \u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u043D\u043E\u043C\u0435\u0440", request_contact: true }],
