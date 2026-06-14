@@ -49,15 +49,18 @@ async function verifyDriver(identifier) {
 
     for (const driver of drivers) {
       const profile = driver.driver_profile || {};
-      const phone = (profile.phone || "").replace(/[\s\-\(\)\+]/g, "");
-      const licenseNum = (profile.license || {}).number || "";
-      const name = profile.name || "";
+      const phones = profile.phones || [];
+      const licenseNum = (profile.driver_license || {}).number || "";
+      const name = `${profile.first_name || ""} ${profile.last_name || ""}`.trim();
       const driverId = profile.id || "";
 
-      if (cleanId === phone || identifier === licenseNum || cleanId === licenseNum) {
+      const cleanPhones = phones.map(p => p.replace(/[\s\-\(\)\+]/g, ""));
+      const cleanLicense = licenseNum.replace(/[\s\-\(\)\+]/g, "");
+
+      if (cleanPhones.includes(cleanId) || cleanId === cleanLicense) {
         return {
           authorized: true,
-          driver: { id: driverId, name, phone: profile.phone, license: licenseNum },
+          driver: { id: driverId, name, phone: phones[0] || "", license: licenseNum },
         };
       }
     }
